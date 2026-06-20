@@ -1,0 +1,46 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
+import configuration from './config/configuration';
+import { validateEnv } from './config/env.validation';
+import { UsersModule } from './users/users.module';
+import { RolesModule } from './roles/roles.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { SampleController } from './sample/sample.controller';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+      validate: validateEnv,
+    }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => ({
+        type: 'postgres' as const,
+        url: cfg.get<string>('database.url'),
+        ssl: { rejectUnauthorized: false },
+        autoLoadEntities: true,
+        synchronize: false,
+        extra: { max: 10 },
+      }),
+    }),
+    UsersModule,
+    RolesModule,
+    AuthModule,
+  ],
+  controllers: [AppController, SampleController],
+  providers: [
+    AppService,
+    // Order matters: authenticate first, then authorize by role.
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
+})
+export class AppModule {}
