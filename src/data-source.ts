@@ -5,6 +5,8 @@ import { Role } from './roles/entities/role.entity';
 import { User } from './users/entities/user.entity';
 import { OAuthAccount } from './auth/entities/oauth-account.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
+import { SellerVerification } from './seller-verification/entities/seller-verification.entity';
+import { Listing } from './listings/entities/listing.entity';
 
 /**
  * DataSource used by the TypeORM CLI (migration generate/run/revert).
@@ -14,7 +16,7 @@ export const AppDataSource = new DataSource({
   type: 'postgres',
   url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  entities: [Role, User, OAuthAccount, RefreshToken],
+  entities: [Role, User, OAuthAccount, RefreshToken, SellerVerification, Listing],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,
 });

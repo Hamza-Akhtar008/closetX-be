@@ -52,6 +52,14 @@ export class User {
   @Column({ type: 'boolean', default: false, name: 'marketing_opt_in' })
   marketingOptIn: boolean;
 
+  /** UI / email language preference ('en' | 'ar'). Drives transactional emails. */
+  @Column({ type: 'varchar', default: 'en' })
+  locale: string;
+
+  /** Account status set by admins: 'active' | 'suspended' | 'banned'. */
+  @Column({ type: 'varchar', default: 'active' })
+  status: string;
+
   @OneToMany(() => OAuthAccount, (account) => account.user)
   oauthAccounts: OAuthAccount[];
 

@@ -7,6 +7,8 @@ import { validateEnv } from './config/env.validation';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { AuthModule } from './auth/auth.module';
+import { SellerVerificationModule } from './seller-verification/seller-verification.module';
+import { ListingsModule } from './listings/listings.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { AppController } from './app.controller';
@@ -34,6 +36,8 @@ import { SampleController } from './sample/sample.controller';
     UsersModule,
     RolesModule,
     AuthModule,
+    SellerVerificationModule,
+    ListingsModule,
   ],
   controllers: [AppController, SampleController],
   providers: [

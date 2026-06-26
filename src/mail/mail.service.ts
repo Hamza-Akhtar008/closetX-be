@@ -5,6 +5,22 @@ import {
   verificationEmailHtml,
   verificationEmailText,
 } from './templates/verification-email';
+import {
+  sellerApprovedHtml,
+  sellerApprovedSubject,
+  sellerApprovedText,
+  sellerRejectedHtml,
+  sellerRejectedSubject,
+  sellerRejectedText,
+} from './templates/seller-verification-email';
+import {
+  listingApprovedHtml,
+  listingApprovedSubject,
+  listingApprovedText,
+  listingRejectedHtml,
+  listingRejectedSubject,
+  listingRejectedText,
+} from './templates/listing-email';
 
 @Injectable()
 export class MailService implements OnModuleInit {
@@ -81,6 +97,97 @@ export class MailService implements OnModuleInit {
     // Always surface the link in dev so the flow is testable without SMTP.
     if (!this.smtpConfigured) {
       this.logger.log(`[DEV] Verification link for ${to}: ${verifyUrl}`);
+    }
+  }
+
+  private frontendUrl(): string {
+    return this.config.get<string>('frontendUrl') ?? 'http://localhost:3000';
+  }
+
+  /** Seller verification APPROVED — sent in the seller's locale. Never throws. */
+  async sendSellerApproved(to: string, name: string, locale: string): Promise<void> {
+    const ctaUrl = `${this.frontendUrl()}/seller`;
+    await this.send(
+      to,
+      sellerApprovedSubject(locale),
+      sellerApprovedHtml({ name, locale }, ctaUrl),
+      sellerApprovedText({ name, locale }, ctaUrl),
+    );
+  }
+
+  /** Seller verification REJECTED — includes the reason, in the seller's locale. */
+  async sendSellerRejected(
+    to: string,
+    name: string,
+    reason: string,
+    locale: string,
+  ): Promise<void> {
+    const ctaUrl = `${this.frontendUrl()}/seller/verification`;
+    await this.send(
+      to,
+      sellerRejectedSubject(locale),
+      sellerRejectedHtml({ name, reason, locale }, ctaUrl),
+      sellerRejectedText({ name, reason, locale }, ctaUrl),
+    );
+  }
+
+  /** Listing APPROVED — sent in the seller's locale. Never throws. */
+  async sendListingApproved(
+    to: string,
+    name: string,
+    title: string,
+    locale: string,
+  ): Promise<void> {
+    const ctaUrl = `${this.frontendUrl()}/seller/listings`;
+    await this.send(
+      to,
+      listingApprovedSubject(locale),
+      listingApprovedHtml(name, title, locale, ctaUrl),
+      listingApprovedText(name, title, locale, ctaUrl),
+    );
+  }
+
+  /** Listing REJECTED — includes the reason, in the seller's locale. */
+  async sendListingRejected(
+    to: string,
+    name: string,
+    title: string,
+    reason: string,
+    locale: string,
+  ): Promise<void> {
+    const ctaUrl = `${this.frontendUrl()}/seller/listings`;
+    await this.send(
+      to,
+      listingRejectedSubject(locale),
+      listingRejectedHtml(name, title, reason, locale, ctaUrl),
+      listingRejectedText(name, title, reason, locale, ctaUrl),
+    );
+  }
+
+  /** Shared sender: logs in dev, swallows SMTP errors so flows never fail. */
+  private async send(
+    to: string,
+    subject: string,
+    html: string,
+    text: string,
+  ): Promise<void> {
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.from,
+        to,
+        subject,
+        html,
+        text,
+      });
+      if (this.smtpConfigured) {
+        this.logger.log(`Email "${subject}" to ${to} — id=${info.messageId}`);
+      } else {
+        this.logger.log(`[DEV] Email "${subject}" for ${to} (SMTP disabled).`);
+      }
+    } catch (err) {
+      this.logger.error(
+        `Failed to send "${subject}" to ${to}: ${(err as Error).message}`,
+      );
     }
   }
 }

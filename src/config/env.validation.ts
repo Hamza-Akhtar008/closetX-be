@@ -35,6 +35,10 @@ class EnvVars {
   @IsString()
   FRONTEND_URL!: string;
 
+  @IsOptional()
+  @IsString()
+  PUBLIC_API_URL?: string;
+
   @IsNotEmpty()
   @IsString()
   JWT_ACCESS_SECRET!: string;
@@ -64,6 +68,16 @@ class EnvVars {
   @IsOptional() @IsString() GOOGLE_CLIENT_ID?: string;
   @IsOptional() @IsString() GOOGLE_CLIENT_SECRET?: string;
   @IsOptional() @IsString() GOOGLE_CALLBACK_URL?: string;
+
+  // Seller-verification infra. All optional so the app boots in dev (S3 falls
+  // back to local disk, encryption derives a dev key with a warning). In
+  // production these MUST be set — CryptoService throws without ENCRYPTION_KEY.
+  @IsOptional() @IsString() AWS_REGION?: string;
+  @IsOptional() @IsString() S3_BUCKET?: string;
+  @IsOptional() @IsString() AWS_ACCESS_KEY_ID?: string;
+  @IsOptional() @IsString() AWS_SECRET_ACCESS_KEY?: string;
+  @IsOptional() @IsString() S3_PRESIGN_TTL?: string;
+  @IsOptional() @IsString() ENCRYPTION_KEY?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
