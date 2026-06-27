@@ -15,6 +15,7 @@ import { EmailTemplatesModule } from './email-templates/email-templates.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { SellerProfileModule } from './seller-profile/seller-profile.module';
 import { AccountModule } from './account/account.module';
+import { StorefrontModule } from './storefront/storefront.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { AppController } from './app.controller';
@@ -50,6 +51,7 @@ import { SampleController } from './sample/sample.controller';
     CatalogModule,
     SellerProfileModule,
     AccountModule,
+    StorefrontModule,
   ],
   controllers: [AppController, SampleController],
   providers: [
