@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import {
@@ -57,6 +57,14 @@ export class UsersService {
     await this.repo.update(id, { locale });
   }
 
+  async updateProfileBasics(
+    id: string,
+    fields: Partial<Pick<User, 'fullName' | 'phone' | 'avatarUrl' | 'country'>>,
+  ): Promise<void> {
+    if (Object.keys(fields).length === 0) return;
+    await this.repo.update(id, fields);
+  }
+
   // ───────────────────────────  Admin  ───────────────────────────
 
   private roleLabel(roleId: number | null): string {
@@ -91,6 +99,8 @@ export class UsersService {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(100, Math.max(1, params.limit ?? 20));
     const qb = this.repo.createQueryBuilder('u');
+    // Admins are managed separately and never listed here.
+    qb.where('u.roleId IS DISTINCT FROM :adminRole', { adminRole: RoleId.Admin });
     switch (params.tab) {
       case 'buyer':
         qb.andWhere('u.roleId IN (:...ids)', { ids: [RoleId.Buyer, RoleId.SellerBuyer] });
@@ -117,12 +127,17 @@ export class UsersService {
   }
 
   async adminStats() {
+    // Exclude admins from every count so the stats match the (admin-less) list.
+    const base = () =>
+      this.repo
+        .createQueryBuilder('u')
+        .where('u.roleId IS DISTINCT FROM :adminRole', { adminRole: RoleId.Admin });
     const [total, buyers, sellers, suspended, banned] = await Promise.all([
-      this.repo.count(),
-      this.repo.count({ where: { roleId: In([RoleId.Buyer, RoleId.SellerBuyer]) } }),
-      this.repo.count({ where: { roleId: In([RoleId.Seller, RoleId.SellerBuyer]) } }),
-      this.repo.count({ where: { status: 'suspended' } }),
-      this.repo.count({ where: { status: 'banned' } }),
+      base().getCount(),
+      base().andWhere('u.roleId IN (:...ids)', { ids: [RoleId.Buyer, RoleId.SellerBuyer] }).getCount(),
+      base().andWhere('u.roleId IN (:...ids)', { ids: [RoleId.Seller, RoleId.SellerBuyer] }).getCount(),
+      base().andWhere('u.status = :s', { s: 'suspended' }).getCount(),
+      base().andWhere('u.status = :s', { s: 'banned' }).getCount(),
     ]);
     return { total, buyers, sellers, suspended, banned };
   }
@@ -153,7 +168,9 @@ export class UsersService {
   }
 
   async exportCsv(): Promise<string> {
-    const users = await this.repo.find({ order: { createdAt: 'DESC' } });
+    const users = (await this.repo.find({ order: { createdAt: 'DESC' } })).filter(
+      (u) => u.roleId !== RoleId.Admin,
+    );
     const header = ['id', 'name', 'email', 'role', 'status', 'verified', 'joined'].join(',');
     const lines = users.map((u) =>
       [

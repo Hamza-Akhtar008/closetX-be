@@ -10,6 +10,7 @@ import { Listing, ListingStatus } from './entities/listing.entity';
 import { S3Service } from '../common/storage/s3.service';
 import { MailService } from '../mail/mail.service';
 import { SellerVerificationService } from '../seller-verification/seller-verification.service';
+import { CatalogService } from '../catalog/catalog.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 
@@ -22,11 +23,20 @@ export class ListingsService {
     private readonly s3: S3Service,
     private readonly mail: MailService,
     private readonly verification: SellerVerificationService,
+    private readonly catalog: CatalogService,
   ) {}
 
   private keys(l: Listing): string[] {
     try {
       return l.photoKeys ? (JSON.parse(l.photoKeys) as string[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private shipping(l: Listing): { method: string; dispatchTime: string }[] {
+    try {
+      return l.shippingOptions ? (JSON.parse(l.shippingOptions) as { method: string; dispatchTime: string }[]) : [];
     } catch {
       return [];
     }
@@ -48,12 +58,12 @@ export class ListingsService {
       color: l.color,
       priceUsd,
       priceSar: Math.round(priceUsd * USD_TO_SAR * 100) / 100,
-      shippingOption: l.shippingOption,
-      dispatchTime: l.dispatchTime,
+      shippingOptions: this.shipping(l),
       status: l.status,
       rejectionReason: l.status === 'REJECTED' ? l.rejectionReason : null,
       coverUrl: photoUrls[0] ?? null,
       photoUrls,
+      photoKeys: keys,
       photoCount: keys.length,
       publishedAt: l.publishedAt,
       createdAt: l.createdAt,
@@ -75,6 +85,7 @@ export class ListingsService {
   }
 
   async create(userId: string, dto: CreateListingDto) {
+    if (dto.brand?.trim()) await this.catalog.ensureBrand(dto.brand);
     const l = this.repo.create({
       userId,
       title: dto.title,
@@ -86,8 +97,7 @@ export class ListingsService {
       size: dto.size ?? null,
       color: dto.color ?? null,
       priceUsd: dto.priceUsd,
-      shippingOption: dto.shippingOption ?? null,
-      dispatchTime: dto.dispatchTime ?? null,
+      shippingOptions: JSON.stringify(dto.shippingOptions ?? []),
       photoKeys: JSON.stringify(dto.photoKeys ?? []),
       status: 'DRAFT',
     });
@@ -114,6 +124,7 @@ export class ListingsService {
 
   async update(userId: string, id: string, dto: UpdateListingDto) {
     const l = await this.ownOrThrow(userId, id);
+    if (dto.brand?.trim()) await this.catalog.ensureBrand(dto.brand);
     Object.assign(l, {
       ...(dto.title !== undefined && { title: dto.title }),
       ...(dto.description !== undefined && { description: dto.description }),
@@ -124,8 +135,7 @@ export class ListingsService {
       ...(dto.size !== undefined && { size: dto.size }),
       ...(dto.color !== undefined && { color: dto.color }),
       ...(dto.priceUsd !== undefined && { priceUsd: dto.priceUsd }),
-      ...(dto.shippingOption !== undefined && { shippingOption: dto.shippingOption }),
-      ...(dto.dispatchTime !== undefined && { dispatchTime: dto.dispatchTime }),
+      ...(dto.shippingOptions !== undefined && { shippingOptions: JSON.stringify(dto.shippingOptions) }),
       ...(dto.photoKeys !== undefined && { photoKeys: JSON.stringify(dto.photoKeys) }),
     });
     return this.toResponse(await this.repo.save(l));

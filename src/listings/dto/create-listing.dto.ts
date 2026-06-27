@@ -6,7 +6,14 @@ import {
   IsString,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class ShippingOptionDto {
+  @IsString() @MaxLength(40) method: string;
+  @IsString() @MaxLength(40) dispatchTime: string;
+}
 
 export class CreateListingDto {
   @IsString()
@@ -29,8 +36,12 @@ export class CreateListingDto {
   @Min(0)
   priceUsd: number;
 
-  @IsOptional() @IsString() @MaxLength(40) shippingOption?: string;
-  @IsOptional() @IsString() @MaxLength(40) dispatchTime?: string;
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ShippingOptionDto)
+  @ArrayMaxSize(6)
+  shippingOptions?: ShippingOptionDto[];
 
   /** S3 object keys from prior pre-signed uploads; first = cover. */
   @IsOptional()

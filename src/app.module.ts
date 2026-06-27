@@ -9,6 +9,12 @@ import { RolesModule } from './roles/roles.module';
 import { AuthModule } from './auth/auth.module';
 import { SellerVerificationModule } from './seller-verification/seller-verification.module';
 import { ListingsModule } from './listings/listings.module';
+import { SettingsModule } from './settings/settings.module';
+import { BannersModule } from './banners/banners.module';
+import { EmailTemplatesModule } from './email-templates/email-templates.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { SellerProfileModule } from './seller-profile/seller-profile.module';
+import { AccountModule } from './account/account.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { AppController } from './app.controller';
@@ -38,6 +44,12 @@ import { SampleController } from './sample/sample.controller';
     AuthModule,
     SellerVerificationModule,
     ListingsModule,
+    SettingsModule,
+    BannersModule,
+    EmailTemplatesModule,
+    CatalogModule,
+    SellerProfileModule,
+    AccountModule,
   ],
   controllers: [AppController, SampleController],
   providers: [

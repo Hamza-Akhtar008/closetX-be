@@ -69,6 +69,10 @@ export class Listing {
   @Column({ type: 'varchar', nullable: true, name: 'dispatch_time' })
   dispatchTime: string | null;
 
+  /** JSON array of { method, dispatchTime } — multiple shipping options. */
+  @Column({ type: 'text', nullable: true, name: 'shipping_options' })
+  shippingOptions: string | null;
+
   /** JSON array of private S3 object keys; first element is the cover. */
   @Column({ type: 'text', nullable: true, name: 'photo_keys' })
   photoKeys: string | null;

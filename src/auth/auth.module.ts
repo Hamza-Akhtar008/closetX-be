@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
+import { SettingsModule } from '../settings/settings.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { LocalStrategy } from './strategies/local.strategy';
@@ -24,6 +25,7 @@ const oauthProviders: Provider[] = process.env.GOOGLE_CLIENT_ID
   imports: [
     UsersModule,
     MailModule,
+    SettingsModule,
     PassportModule,
     JwtModule.register({}),
     TypeOrmModule.forFeature([RefreshToken, OAuthAccount]),

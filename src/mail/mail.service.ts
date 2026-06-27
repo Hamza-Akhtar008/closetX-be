@@ -21,6 +21,7 @@ import {
   listingRejectedSubject,
   listingRejectedText,
 } from './templates/listing-email';
+import { EmailTemplatesService } from '../email-templates/email-templates.service';
 
 @Injectable()
 export class MailService implements OnModuleInit {
@@ -29,7 +30,10 @@ export class MailService implements OnModuleInit {
   private readonly from: string;
   private readonly smtpConfigured: boolean;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly templates: EmailTemplatesService,
+  ) {
     this.from =
       this.config.get<string>('mail.from') ??
       'ClosetX <no-reply@closetx.app>';
@@ -74,26 +78,16 @@ export class MailService implements OnModuleInit {
     verifyUrl: string,
     expiresInHours: number,
   ): Promise<void> {
-    try {
-      const info = await this.transporter.sendMail({
-        from: this.from,
-        to,
+    await this.sendTemplated(
+      'emailVerification',
+      to,
+      { name, verifyUrl },
+      () => ({
         subject: 'Verify your ClosetX email',
         html: verificationEmailHtml({ name, verifyUrl, expiresInHours }),
         text: verificationEmailText({ name, verifyUrl, expiresInHours }),
-      });
-      if (this.smtpConfigured) {
-        this.logger.log(
-          `Verification email to ${to} — id=${info.messageId} accepted=${JSON.stringify(
-            info.accepted,
-          )} rejected=${JSON.stringify(info.rejected)} response=${info.response}`,
-        );
-      }
-    } catch (err) {
-      this.logger.error(
-        `Failed to send verification email to ${to}: ${(err as Error).message}`,
-      );
-    }
+      }),
+    );
     // Always surface the link in dev so the flow is testable without SMTP.
     if (!this.smtpConfigured) {
       this.logger.log(`[DEV] Verification link for ${to}: ${verifyUrl}`);
@@ -104,18 +98,17 @@ export class MailService implements OnModuleInit {
     return this.config.get<string>('frontendUrl') ?? 'http://localhost:3000';
   }
 
-  /** Seller verification APPROVED — sent in the seller's locale. Never throws. */
+  /** Seller verification APPROVED. Uses the editable DB template, code fallback. */
   async sendSellerApproved(to: string, name: string, locale: string): Promise<void> {
     const ctaUrl = `${this.frontendUrl()}/seller`;
-    await this.send(
-      to,
-      sellerApprovedSubject(locale),
-      sellerApprovedHtml({ name, locale }, ctaUrl),
-      sellerApprovedText({ name, locale }, ctaUrl),
-    );
+    await this.sendTemplated('sellerApproved', to, { name, ctaUrl }, () => ({
+      subject: sellerApprovedSubject(locale),
+      html: sellerApprovedHtml({ name, locale }, ctaUrl),
+      text: sellerApprovedText({ name, locale }, ctaUrl),
+    }));
   }
 
-  /** Seller verification REJECTED — includes the reason, in the seller's locale. */
+  /** Seller verification REJECTED — includes the reason. */
   async sendSellerRejected(
     to: string,
     name: string,
@@ -123,15 +116,14 @@ export class MailService implements OnModuleInit {
     locale: string,
   ): Promise<void> {
     const ctaUrl = `${this.frontendUrl()}/seller/verification`;
-    await this.send(
-      to,
-      sellerRejectedSubject(locale),
-      sellerRejectedHtml({ name, reason, locale }, ctaUrl),
-      sellerRejectedText({ name, reason, locale }, ctaUrl),
-    );
+    await this.sendTemplated('sellerRejected', to, { name, reason, ctaUrl }, () => ({
+      subject: sellerRejectedSubject(locale),
+      html: sellerRejectedHtml({ name, reason, locale }, ctaUrl),
+      text: sellerRejectedText({ name, reason, locale }, ctaUrl),
+    }));
   }
 
-  /** Listing APPROVED — sent in the seller's locale. Never throws. */
+  /** Listing APPROVED. */
   async sendListingApproved(
     to: string,
     name: string,
@@ -139,15 +131,14 @@ export class MailService implements OnModuleInit {
     locale: string,
   ): Promise<void> {
     const ctaUrl = `${this.frontendUrl()}/seller/listings`;
-    await this.send(
-      to,
-      listingApprovedSubject(locale),
-      listingApprovedHtml(name, title, locale, ctaUrl),
-      listingApprovedText(name, title, locale, ctaUrl),
-    );
+    await this.sendTemplated('listingApproved', to, { name, title, ctaUrl }, () => ({
+      subject: listingApprovedSubject(locale),
+      html: listingApprovedHtml(name, title, locale, ctaUrl),
+      text: listingApprovedText(name, title, locale, ctaUrl),
+    }));
   }
 
-  /** Listing REJECTED — includes the reason, in the seller's locale. */
+  /** Listing REJECTED — includes the reason. */
   async sendListingRejected(
     to: string,
     name: string,
@@ -156,12 +147,25 @@ export class MailService implements OnModuleInit {
     locale: string,
   ): Promise<void> {
     const ctaUrl = `${this.frontendUrl()}/seller/listings`;
-    await this.send(
-      to,
-      listingRejectedSubject(locale),
-      listingRejectedHtml(name, title, reason, locale, ctaUrl),
-      listingRejectedText(name, title, reason, locale, ctaUrl),
-    );
+    await this.sendTemplated('listingRejected', to, { name, title, reason, ctaUrl }, () => ({
+      subject: listingRejectedSubject(locale),
+      html: listingRejectedHtml(name, title, reason, locale, ctaUrl),
+      text: listingRejectedText(name, title, reason, locale, ctaUrl),
+    }));
+  }
+
+  /**
+   * Renders an editable DB template (with {{var}} interpolation) and sends it;
+   * falls back to the code template when no DB row exists.
+   */
+  private async sendTemplated(
+    key: string,
+    to: string,
+    vars: Record<string, string>,
+    fallback: () => { subject: string; html: string; text: string },
+  ): Promise<void> {
+    const msg = (await this.templates.render(key, vars)) ?? fallback();
+    await this.send(to, msg.subject, msg.html, msg.text);
   }
 
   /** Shared sender: logs in dev, swallows SMTP errors so flows never fail. */

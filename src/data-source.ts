@@ -7,6 +7,14 @@ import { OAuthAccount } from './auth/entities/oauth-account.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
 import { SellerVerification } from './seller-verification/entities/seller-verification.entity';
 import { Listing } from './listings/entities/listing.entity';
+import { Setting } from './settings/entities/setting.entity';
+import { Banner } from './banners/entities/banner.entity';
+import { EmailTemplate } from './email-templates/entities/email-template.entity';
+import { Category } from './catalog/entities/category.entity';
+import { Subcategory } from './catalog/entities/subcategory.entity';
+import { Brand } from './catalog/entities/brand.entity';
+import { SellerProfile } from './seller-profile/entities/seller-profile.entity';
+import { BuyerProfile } from './account/entities/buyer-profile.entity';
 
 /**
  * DataSource used by the TypeORM CLI (migration generate/run/revert).
@@ -16,7 +24,22 @@ export const AppDataSource = new DataSource({
   type: 'postgres',
   url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  entities: [Role, User, OAuthAccount, RefreshToken, SellerVerification, Listing],
+  entities: [
+    Role,
+    User,
+    OAuthAccount,
+    RefreshToken,
+    SellerVerification,
+    Listing,
+    Setting,
+    Banner,
+    EmailTemplate,
+    Category,
+    Subcategory,
+    Brand,
+    SellerProfile,
+    BuyerProfile,
+  ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,
 });

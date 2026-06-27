@@ -6,7 +6,10 @@ import {
   IsString,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ShippingOptionDto } from './create-listing.dto';
 
 /** All fields optional — used for PATCH edits to a draft/listing. */
 export class UpdateListingDto {
@@ -21,8 +24,12 @@ export class UpdateListingDto {
 
   @IsOptional() @IsNumber() @Min(0) priceUsd?: number;
 
-  @IsOptional() @IsString() @MaxLength(40) shippingOption?: string;
-  @IsOptional() @IsString() @MaxLength(40) dispatchTime?: string;
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ShippingOptionDto)
+  @ArrayMaxSize(6)
+  shippingOptions?: ShippingOptionDto[];
 
   @IsOptional()
   @IsArray()

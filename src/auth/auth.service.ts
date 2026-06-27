@@ -24,6 +24,7 @@ import {
 import { OAuthProfile } from './strategies/google.strategy';
 import { parseDurationMs } from '../common/utils/duration';
 import { MailService } from '../mail/mail.service';
+import { SettingsService } from '../settings/settings.service';
 
 export interface AuthTokens {
   accessToken: string;
@@ -41,6 +42,7 @@ export class AuthService {
     @InjectRepository(OAuthAccount)
     private readonly oauthRepo: Repository<OAuthAccount>,
     private readonly mailService: MailService,
+    private readonly settings: SettingsService,
   ) {}
 
   async register(dto: RegisterDto): Promise<User> {
@@ -127,7 +129,14 @@ export class AuthService {
     }
   }
 
-  setRole(userId: string, choice: RoleChoice): Promise<User> {
+  async setRole(userId: string, choice: RoleChoice): Promise<User> {
+    // Admin can close new-seller signups via Platform Settings.
+    if (
+      (choice === 'seller' || choice === 'both') &&
+      !(await this.settings.getBool('flag.sellerRegistration', true))
+    ) {
+      throw new ForbiddenException('sellerRegistrationClosed');
+    }
     return this.usersService.setRole(userId, ROLE_CHOICE_TO_ID[choice]);
   }
 
