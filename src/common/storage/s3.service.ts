@@ -36,6 +36,11 @@ export class S3Service {
           accessKeyId && secretAccessKey
             ? { accessKeyId, secretAccessKey }
             : undefined,
+        // AWS SDK v3 (>=3.726) adds a CRC32 checksum to pre-signed PUT URLs,
+        // which breaks browser uploads (the pre-computed checksum can't match
+        // the real bytes). Revert to legacy behaviour for browser PUTs.
+        requestChecksumCalculation: 'WHEN_REQUIRED',
+        responseChecksumValidation: 'WHEN_REQUIRED',
       });
     } else {
       this.logger.warn(
