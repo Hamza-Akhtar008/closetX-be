@@ -15,6 +15,11 @@ import { Subcategory } from './catalog/entities/subcategory.entity';
 import { Brand } from './catalog/entities/brand.entity';
 import { SellerProfile } from './seller-profile/entities/seller-profile.entity';
 import { BuyerProfile } from './account/entities/buyer-profile.entity';
+import { CartItem } from './cart/entities/cart-item.entity';
+import { Address } from './orders/entities/address.entity';
+import { Order } from './orders/entities/order.entity';
+import { OrderItem } from './orders/entities/order-item.entity';
+import { Notification } from './notifications/entities/notification.entity';
 
 /**
  * DataSource used by the TypeORM CLI (migration generate/run/revert).
@@ -39,6 +44,11 @@ export const AppDataSource = new DataSource({
     Brand,
     SellerProfile,
     BuyerProfile,
+    CartItem,
+    Address,
+    Order,
+    OrderItem,
+    Notification,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

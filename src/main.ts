@@ -29,6 +29,7 @@ async function bootstrap() {
     app.use('/listings/photos/dev-upload', raw({ type: () => true, limit: '12mb' }));
   }
 
-  await app.listen(config.get<number>('port') ?? 5001);
+  // Bind 0.0.0.0 so platforms like Render can detect the open port.
+  await app.listen(config.get<number>('port') ?? 5001, '0.0.0.0');
 }
 void bootstrap();

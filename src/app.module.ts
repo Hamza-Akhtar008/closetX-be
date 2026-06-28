@@ -16,6 +16,9 @@ import { CatalogModule } from './catalog/catalog.module';
 import { SellerProfileModule } from './seller-profile/seller-profile.module';
 import { AccountModule } from './account/account.module';
 import { StorefrontModule } from './storefront/storefront.module';
+import { CartModule } from './cart/cart.module';
+import { OrdersModule } from './orders/orders.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { AppController } from './app.controller';
@@ -52,6 +55,9 @@ import { SampleController } from './sample/sample.controller';
     SellerProfileModule,
     AccountModule,
     StorefrontModule,
+    CartModule,
+    OrdersModule,
+    NotificationsModule,
   ],
   controllers: [AppController, SampleController],
   providers: [

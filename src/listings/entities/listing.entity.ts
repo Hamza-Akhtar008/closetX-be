@@ -15,7 +15,8 @@ export type ListingStatus =
   | 'UNDER_REVIEW' // awaiting admin approval (system, on publish by unverified seller)
   | 'ACTIVE' // live in marketplace (seller publishes / admin approves)
   | 'PAUSED' // hidden from marketplace, seller can restore (seller pauses)
-  | 'REJECTED'; // not visible, reason shown to seller (admin rejects)
+  | 'REJECTED' // not visible, reason shown to seller (admin rejects)
+  | 'SOLD'; // purchased via checkout (system, on order placed)
 
 /**
  * A seller listing. Photos are stored as private S3 object keys (JSON array in
