@@ -101,6 +101,11 @@ export class OrdersService {
       inTransitAt: order.inTransitAt,
       deliveredAt: order.deliveredAt,
       completedAt: order.completedAt,
+      // Buyer can dispute within 14 days AFTER confirming delivery.
+      disputable:
+        order.status === 'delivered' &&
+        !!order.deliveredAt &&
+        Date.now() - new Date(order.deliveredAt).getTime() < 14 * 24 * 60 * 60 * 1000,
       itemCount: mappedItems.length,
       items: mappedItems,
     };
@@ -312,23 +317,23 @@ export class OrdersService {
     );
   }
 
+  /** Buyer confirms receipt → opens the 14-day inspection/dispute window.
+   *  The order is NOT closed yet; escrow auto-releases after 14 days (cron). */
   async markReceived(buyerId: string, id: string) {
     const order = await this.orders.findOne({ where: { id, buyerId } });
     if (!order) throw new NotFoundException('orderNotFound');
-    if (!['in_transit', 'delivered'].includes(order.status)) {
-      throw new BadRequestException('onlyAfterTransit');
+    if (order.status !== 'in_transit') {
+      throw new BadRequestException('onlyInTransitCanConfirm');
     }
-    const now = new Date();
-    if (!order.deliveredAt) order.deliveredAt = now;
-    order.status = 'completed';
-    order.completedAt = now;
+    order.status = 'delivered';
+    order.deliveredAt = new Date();
     await this.orders.save(order);
 
     await this.notifications.create({
       userId: order.sellerId,
-      type: 'order_completed',
-      title: 'Delivery confirmed 🎉',
-      body: 'The buyer confirmed delivery — your payout is released from escrow.',
+      type: 'order_delivered',
+      title: 'Buyer confirmed delivery',
+      body: 'A 14-day inspection window has started. Your payout releases automatically if no dispute is opened.',
       link: `/seller/orders`,
     });
     const its = await this.items.find({ where: { orderId: order.id } });
@@ -355,20 +360,13 @@ export class OrdersService {
   async updateStatus(
     sellerId: string,
     id: string,
-    status: 'confirmed' | 'preparing' | 'shipped' | 'in_transit' | 'delivered',
+    status: 'confirmed' | 'preparing' | 'shipped' | 'in_transit',
   ) {
     const order = await this.orders.findOne({ where: { id, sellerId } });
     if (!order) throw new NotFoundException('orderNotFound');
 
-    // Forward-only chain — each step must be the immediate next.
-    const chain: OrderStatus[] = [
-      'paid',
-      'confirmed',
-      'preparing',
-      'shipped',
-      'in_transit',
-      'delivered',
-    ];
+    // Forward-only seller chain — ends at in_transit; the BUYER confirms delivery.
+    const chain: OrderStatus[] = ['paid', 'confirmed', 'preparing', 'shipped', 'in_transit'];
     if (chain.indexOf(status) !== chain.indexOf(order.status) + 1) {
       throw new BadRequestException('invalidStatusTransition');
     }
@@ -377,7 +375,6 @@ export class OrdersService {
       preparing: 'preparingAt',
       shipped: 'shippedAt',
       in_transit: 'inTransitAt',
-      delivered: 'deliveredAt',
     };
     order.status = status;
     (order[tsField[status]] as Date) = new Date();
@@ -387,8 +384,7 @@ export class OrdersService {
       confirmed: { title: 'Seller confirmed your order', body: 'The seller accepted your order and will prepare it.' },
       preparing: { title: 'Your order is being prepared', body: 'The seller is preparing your piece for shipment.' },
       shipped: { title: 'Shipping initiated 📦', body: 'A shipping label was created for your order.' },
-      in_transit: { title: 'Your order is on its way 🚚', body: 'Your order is in transit with the carrier.' },
-      delivered: { title: 'Your order was delivered 🎉', body: 'Confirm delivery to release the payment from escrow.' },
+      in_transit: { title: 'Your order is on its way 🚚', body: 'In transit — confirm delivery when it arrives.' },
     };
     await this.notifications.create({
       userId: order.buyerId,
@@ -397,17 +393,17 @@ export class OrdersService {
       body: labels[status].body,
       link: `/account/orders`,
     });
-    if (status === 'in_transit' || status === 'delivered') {
+    if (status === 'in_transit') {
       const buyer = await this.users.findOne({ where: { id: order.buyerId } });
       if (buyer) {
         await this.mail.sendOrderEmail(
           buyer.email,
-          status === 'delivered' ? 'Your ClosetX order was delivered' : 'Your ClosetX order is on its way',
-          labels[status].title,
-          `${buyer.fullName ?? ''}, ${labels[status].body}`,
+          'Your ClosetX order is on its way',
+          labels.in_transit.title,
+          `${buyer.fullName ?? ''}, ${labels.in_transit.body}`,
           [`Total: SAR ${Number(order.total).toLocaleString('en-US')}`],
           `${this.frontend()}/account/orders`,
-          status === 'delivered' ? 'Confirm delivery' : 'Track your order',
+          'Track your order',
         );
       }
     }

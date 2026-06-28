@@ -30,7 +30,12 @@ export class ListingPhotosController {
     if (this.config.get<string>('nodeEnv') === 'production') {
       throw new NotFoundException();
     }
-    if (!key || !key.startsWith('listings/')) {
+    // Allow the dev-upload prefixes used by pre-signed PUTs; block traversal.
+    const allowed =
+      !!key &&
+      (key.startsWith('listings/') || key.startsWith('disputes/')) &&
+      !key.includes('..');
+    if (!allowed) {
       throw new BadRequestException('invalidKey');
     }
     const body = req.body as Buffer;

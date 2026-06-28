@@ -60,6 +60,10 @@ export class User {
   @Column({ type: 'varchar', default: 'active' })
   status: string;
 
+  /** Seller strike count — escalating penalties on lost disputes. */
+  @Column({ type: 'int', default: 0 })
+  strikes: number;
+
   @OneToMany(() => OAuthAccount, (account) => account.user)
   oauthAccounts: OAuthAccount[];
 

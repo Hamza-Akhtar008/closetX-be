@@ -35,6 +35,6 @@ export class CheckoutDto {
 }
 
 export class UpdateOrderStatusDto {
-  @IsIn(['confirmed', 'preparing', 'shipped', 'in_transit', 'delivered'])
-  status: 'confirmed' | 'preparing' | 'shipped' | 'in_transit' | 'delivered';
+  @IsIn(['confirmed', 'preparing', 'shipped', 'in_transit'])
+  status: 'confirmed' | 'preparing' | 'shipped' | 'in_transit';
 }

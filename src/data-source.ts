@@ -20,6 +20,7 @@ import { Address } from './orders/entities/address.entity';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
 import { Notification } from './notifications/entities/notification.entity';
+import { Dispute } from './disputes/entities/dispute.entity';
 
 /**
  * DataSource used by the TypeORM CLI (migration generate/run/revert).
@@ -49,6 +50,7 @@ export const AppDataSource = new DataSource({
     Order,
     OrderItem,
     Notification,
+    Dispute,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

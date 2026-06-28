@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import configuration from './config/configuration';
 import { validateEnv } from './config/env.validation';
@@ -19,6 +20,7 @@ import { StorefrontModule } from './storefront/storefront.module';
 import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { DisputesModule } from './disputes/disputes.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { AppController } from './app.controller';
@@ -32,6 +34,7 @@ import { SampleController } from './sample/sample.controller';
       load: [configuration],
       validate: validateEnv,
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
@@ -58,6 +61,7 @@ import { SampleController } from './sample/sample.controller';
     CartModule,
     OrdersModule,
     NotificationsModule,
+    DisputesModule,
   ],
   controllers: [AppController, SampleController],
   providers: [

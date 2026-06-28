@@ -21,7 +21,8 @@ export type OrderStatus =
   | 'delivered' // Delivered to You
   | 'completed' // Delivery Confirmed → Order Closed
   | 'cancelled'
-  | 'disputed';
+  | 'disputed' // open dispute — order held, cannot close
+  | 'refunded'; // dispute resolved in buyer's favour
 
 @Entity('orders')
 export class Order {
