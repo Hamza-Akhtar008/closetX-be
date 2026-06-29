@@ -20,6 +20,8 @@ import { Address } from './orders/entities/address.entity';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
 import { Notification } from './notifications/entities/notification.entity';
+import { WishlistItem } from './wishlist/entities/wishlist-item.entity';
+import { Faq } from './faq/entities/faq.entity';
 import { Dispute } from './disputes/entities/dispute.entity';
 
 /**
@@ -51,6 +53,8 @@ export const AppDataSource = new DataSource({
     OrderItem,
     Notification,
     Dispute,
+    WishlistItem,
+    Faq,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

@@ -21,6 +21,8 @@ import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DisputesModule } from './disputes/disputes.module';
+import { WishlistModule } from './wishlist/wishlist.module';
+import { FaqModule } from './faq/faq.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { AppController } from './app.controller';
@@ -62,6 +64,8 @@ import { SampleController } from './sample/sample.controller';
     OrdersModule,
     NotificationsModule,
     DisputesModule,
+    WishlistModule,
+    FaqModule,
   ],
   controllers: [AppController, SampleController],
   providers: [
